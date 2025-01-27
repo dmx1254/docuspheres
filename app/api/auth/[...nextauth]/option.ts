@@ -94,6 +94,17 @@ export const options: NextAuthOptions = {
   ],
 
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Si l'URL est relative, la préfixer avec baseUrl
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      // Si l'URL est déjà absolue, la retourner telle quelle
+      else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

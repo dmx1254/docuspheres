@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +16,6 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -32,14 +30,14 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        redirect: false,
+        redirect: true, // Changez à true
+        callbackUrl: "/dashboard", // Ajoutez cette ligne
       });
 
       if (result?.error) {
         toast.error(result.error);
       } else {
         toast.success("Connexion réussie");
-        router.push("/dashboard");
       }
     } catch (error) {
       toast.error("Une erreur est survenue");
