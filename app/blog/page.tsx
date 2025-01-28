@@ -49,6 +49,7 @@ import { toast } from "sonner";
 import { PostFileUpload } from "@/components/post-file-upload";
 import { IComment, IPost, IPostFile } from "../types";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface NewPostData {
   title: string;
@@ -485,7 +486,73 @@ const BlogPage = () => {
                             className="flex items-center justify-between rounded-lg border p-3"
                           >
                             <div className="flex items-center gap-2">
-                              <FileIcon className="h-4 w-4 text-blue-500" />
+                              {file.type.includes("pdf") ? (
+                                <div className="w-16 h-16 mx-auto">
+                                  <Image
+                                    src="/pdf.png"
+                                    alt="PDF"
+                                    width={48}
+                                    height={48}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              ) : file.type.includes("image") ? (
+                                <div className="w-16 h-16 mx-auto overflow-hidden rounded-lg">
+                                  <Image
+                                    src={
+                                      file.url
+                                        ? file.url
+                                        : file.secureUrl
+                                        ? file.secureUrl
+                                        : ""
+                                    }
+                                    alt={file.name}
+                                    width={64}
+                                    height={64}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : file.type.includes("word") ||
+                                file.type.includes("document") ||
+                                file.type.includes("application/doc") ? (
+                                <div className="w-16 h-16 mx-auto overflow-hidden rounded-lg">
+                                  <Image
+                                    src={file.secureUrl || ""}
+                                    alt={file.name}
+                                    width={64}
+                                    height={64}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : file.type.includes(
+                                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                ) ||
+                                file.type.includes(
+                                  "application/vnd.ms-excel"
+                                ) ||
+                                file.type.includes("application/excel") ||
+                                file.type.includes("application/x-excel") ||
+                                file.type.includes("application/x-msexcel") ? (
+                                <div className="w-16 h-16 mx-auto">
+                                  <Image
+                                    src="/excel.png"
+                                    alt="excel"
+                                    width={64}
+                                    height={64}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-16 h-16 mx-auto">
+                                  <Image
+                                    src="/text.png"
+                                    alt="File"
+                                    width={64}
+                                    height={64}
+                                    className="object-contain"
+                                  />
+                                </div>
+                              )}
                               <div>
                                 <p className="text-sm font-medium">
                                   {file.name}
@@ -512,7 +579,7 @@ const BlogPage = () => {
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
                   <div className="flex items-center gap-4 w-full">
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="sm"
                       className={`text-muted-foreground ${
@@ -524,7 +591,7 @@ const BlogPage = () => {
                     >
                       <ThumbsUp className="mr-2 h-4 w-4" />
                       {post.likes.length}
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="ghost"
                       size="sm"

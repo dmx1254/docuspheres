@@ -66,6 +66,13 @@ export async function POST(req: Request) {
       throw new Error("Échec de l'upload sur Cloudinary");
     }
 
+    // Déterminer le type de ressource
+    const resourceType = file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+      ? "video"
+      : "raw";
+
     const newFile = await File.create({
       name: file.name,
       size: cloudinaryResponse.bytes,
@@ -81,8 +88,8 @@ export async function POST(req: Request) {
       isPublic,
       tags: tags ? tags.split(",").map((tag) => tag.trim()) : [],
       cloudinaryId: cloudinaryResponse.public_id,
-      format: cloudinaryResponse.format,
-      resourceType: cloudinaryResponse.resource_type,
+      format: cloudinaryResponse.format || file.type.split("/")[1] || "raw",
+      resourceType: resourceType,
       secureUrl: cloudinaryResponse.secure_url,
       fileType: "file",
     });

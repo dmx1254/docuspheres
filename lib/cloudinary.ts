@@ -1,4 +1,8 @@
-import { v2 as cloudinary } from "cloudinary";
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiOptions,
+} from "cloudinary";
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -17,20 +21,37 @@ interface CloudinaryResponse {
   bytes: number;
 }
 
-export const uploadToCloudinary = async (file: string): Promise<CloudinaryResponse> => {
+export const uploadToCloudinary = async (
+  file: string
+): Promise<CloudinaryResponse> => {
   try {
-    const result = await cloudinary.uploader.upload(file, {
+    const uploadOptions: UploadApiOptions = {
       resource_type: "auto",
       folder: "app-files",
-    }) as CloudinaryResponse;
+      // Pour les fichiers raw, on force le format
+      ...(file.includes("application/") && {
+        resource_type: "raw",
+        format: file.split(";")[0].split("/")[1] || "raw",
+      }),
+    };
+
+    const result = (await cloudinary.uploader.upload(
+      file,
+      uploadOptions
+    )) as CloudinaryResponse;
+
+    // Pour les fichiers raw, on doit définir le format manuellement
+    if (result.resource_type === "raw" && !result.format) {
+      result.format = file.split(";")[0].split("/")[1] || "raw";
+    }
 
     return {
       public_id: result.public_id,
       url: result.url,
       secure_url: result.secure_url,
-      format: result.format,
+      format: result.format || "raw", // Valeur par défaut pour les fichiers raw
       resource_type: result.resource_type,
-      bytes: result.bytes
+      bytes: result.bytes,
     };
   } catch (error) {
     console.error("Erreur lors de l'upload sur Cloudinary:", error);

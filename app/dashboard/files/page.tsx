@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,6 +19,10 @@ import {
   Share2,
   Trash2,
   Plus,
+  ChevronRight,
+  TableIcon,
+  GridIcon,
+  Table2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,6 +42,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,6 +59,7 @@ import { Label } from "@/components/ui/label";
 import { IFolder } from "@/app/models/Folder";
 import Image from "next/image";
 import { convertDate } from "@/lib/utils";
+import { FileGridView } from "@/components/file-grid-preview";
 
 interface CurrentFolder {
   _id: string;
@@ -68,156 +74,22 @@ function formatBytes(bytes: number) {
   return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
 }
 
-interface FileOrFolderItemProps {
-  item: IFile | IFolder;
-  onFolderClick?: (folder: IFolder) => void;
-  onDownload?: (file: IFile) => Promise<void>;
-  onShare?: (file: IFile) => Promise<void>;
-  onDelete: (item: IFile | IFolder) => Promise<void>;
-}
-
-function FileItem({
-  item,
-  onFolderClick,
-  onDownload,
-  onShare,
-  onDelete,
-}: FileOrFolderItemProps) {
-  const isFolder = item.fileType === "folder";
-
-  const getFileIcon = () => {
-    if (isFolder) return <FolderIcon className="h-4 w-4" />;
-
-    const fileType = (item as IFile).type?.toLowerCase();
-    if (fileType?.includes("pdf")) {
-      return (
-        <Image
-          src="/pdf.png"
-          alt={item.name}
-          width={40}
-          height={40}
-          className="h-4 w-4 text-blue-500"
-        />
-      ); // Icône PDF en rouge
-    } else if (fileType?.includes("image")) {
-      return (
-        <Image
-          src={(item as any).secureUrl || ""}
-          alt={item.name}
-          width={40}
-          height={40}
-          className="h-4 w-4 text-blue-500 rounded"
-        />
-      ); // Icône image en bleu
-    } else if (fileType?.includes("word") || fileType?.includes("document")) {
-      return (
-        <Image
-          src="/word.png"
-          alt={item.name}
-          width={40}
-          height={40}
-          className="h-4 w-4 text-blue-500"
-        />
-      ); // Icône Word en bleu foncé
-    } else {
-      return (
-        <Image
-          src="/text.png"
-          alt={item.name}
-          width={40}
-          height={40}
-          className="h-4 w-4 text-blue-500"
-        />
-      ); // Icône par défaut
-    }
-  };
-
-  return (
-    <TableRow
-      className={isFolder ? "cursor-pointer hover:bg-accent" : ""}
-      onClick={() => isFolder && onFolderClick?.(item as IFolder)}
-    >
-      <TableCell>
-        <div className="flex items-center gap-2">
-          {isFolder ? (
-            <div className="flex items-center gap-2">
-              <Image
-                src="/folder_i.png"
-                alt="folder"
-                width={20}
-                height={20}
-                className="object-cover object-center"
-              />
-              <span>{item.name}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {getFileIcon()}
-              <span>{item.name}</span>
-            </div>
-          )}
-        </div>
-      </TableCell>
-      <TableCell>
-        {isFolder ? "-" : formatBytes((item as IFile).size)}
-      </TableCell>
-      <TableCell>{convertDate(item.createdAt)}</TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="h-8 w-8 p-0">
-              <MoreVerticalIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {!isFolder && (
-              <>
-                <DropdownMenuItem onClick={() => onDownload?.(item as IFile)}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Télécharger
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onShare?.(item as IFile)}>
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Partager
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuItem
-              onClick={() => onDelete(item)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  );
-}
-
 export default function FilesPage() {
   const [files, setFiles] = useState<IFile[]>([]);
+  const [folders, setFolders] = useState<IFolder[]>([]);
   const [currentFolder, setCurrentFolder] = useState<CurrentFolder | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "file" | "folder">("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [shareLink, setShareLink] = useState("");
-  const [folders, setFolders] = useState<IFolder[]>([]);
   const [breadcrumbPath, setBreadcrumbPath] = useState<
     Array<{ id: string; name: string }>
   >([]);
-
-  const handleBreadcrumbClick = (item: { id: string; name: string }) => {
-    setCurrentFolder({ _id: item.id, name: item.name, path: `/${item.name}` });
-  };
-
-  // console.log(currentFolder?._id);
+  const [selectedItems, setSelectedItems] = useState<(IFile | IFolder)[]>([]);
 
   const fetchFolders = async () => {
     try {
@@ -269,8 +141,8 @@ export default function FilesPage() {
 
       toast.success("Dossier créé avec succès");
       await fetchFolderContents(currentFolder?._id);
-      // Mettre à jour la liste des dossiers
-      // Vous devrez adapter cette partie selon votre gestion d'état
+      setIsFolderDialogOpen(false);
+      setNewFolderName("");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Une erreur est survenue"
@@ -278,73 +150,23 @@ export default function FilesPage() {
     }
   };
 
-  const fetchFiles = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/files");
-      if (!response.ok)
-        throw new Error("Erreur lors de la récupération des fichiers");
-      const data = await response.json();
-      setFiles(data);
-    } catch (error) {
-      toast.error("Erreur lors du chargement des fichiers");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFolders();
-    fetchFiles();
-  }, []);
-
   const handleUploadComplete = async (data: IFile) => {
-    // On attend un File, pas un IFileUpload
     setFiles((prev) => [data, ...prev]);
     toast.success("Fichier uploadé avec succès");
-    setFiles((prev) => [...prev]);
-    await fetchFolderContents(currentFolder?._id); // Refetch pour avoir la bonne hiérarchie
+    await fetchFolderContents(currentFolder?._id);
   };
 
   const handleDownload = async (file: IFile) => {
     try {
-      // Pour les PDFs
-      if (file.type?.includes("pdf")) {
-        const downloadUrl = file.secureUrl.replace(
-          "/upload/",
-          "/upload/fl_attachment/"
-        );
-        window.open(downloadUrl);
-        return;
-      }
-
-      // Pour les images
-      if (file.type?.includes("image")) {
+      if (file.type?.includes("pdf") || file.type?.includes("image")) {
         window.open(file.secureUrl);
         return;
       }
 
-      // Pour les autres types de fichiers
       const response = await fetch(`/api/files/${file._id}/download`);
       if (!response.ok) throw new Error("Erreur de téléchargement");
 
       const data = await response.json();
-      await fetch("/api/history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionType: "download",
-          targetType: "file",
-          targetId: file._id,
-          details: file.name,
-          metadata: {
-            size: file.size,
-          },
-        }),
-      });
       window.open(data.downloadUrl);
     } catch (error) {
       toast.error("Erreur lors du téléchargement");
@@ -353,26 +175,10 @@ export default function FilesPage() {
 
   const handleShare = async (file: IFile) => {
     try {
-      await fetch("/api/history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionType: "share",
-          targetType: "file",
-          targetId: file._id,
-          details: file.name,
-          metadata: {
-            size: file.size,
-          },
-        }),
-      });
       await navigator.clipboard.writeText(file.secureUrl);
       toast.success("Lien de partage copié dans le presse-papier !");
     } catch (error) {
       toast.error("Erreur lors de la copie du lien");
-      console.error(error);
     }
   };
 
@@ -386,22 +192,6 @@ export default function FilesPage() {
 
       if (!response.ok) throw new Error("Erreur lors de la suppression");
 
-      await fetch("/api/history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionType: "delete",
-          targetType: "file",
-          targetId: item._id,
-          details: item.name,
-          metadata: {
-            size: (item as any).size || 0,
-          },
-        }),
-      });
-
       if (item.fileType === "folder") {
         setFolders((prev) => prev.filter((f) => f._id !== item._id));
       } else {
@@ -414,11 +204,17 @@ export default function FilesPage() {
     }
   };
 
-  const filteredFiles = files.filter((file) => {
-    const matchesSearch = file.name
+  useEffect(() => {
+    fetchFolderContents(currentFolder?._id);
+  }, [currentFolder?._id]);
+
+  const allItems = [...folders, ...files];
+  const filteredItems = allItems.filter((item) => {
+    const matchesSearch = item.name
       .toLowerCase()
       .includes(search.toLowerCase());
-    return matchesSearch;
+    const matchesFilter = filter === "all" || item.fileType === filter;
+    return matchesSearch && matchesFilter;
   });
 
   return (
@@ -435,23 +231,33 @@ export default function FilesPage() {
                     setBreadcrumbPath([]);
                     fetchFolderContents();
                   }}
+                  className="cursor-pointer"
                 >
                   Accueil
                 </BreadcrumbLink>
               </BreadcrumbItem>
               {breadcrumbPath.map((item, index) => (
-                <BreadcrumbItem key={item.id}>
-                  <BreadcrumbLink
-                    onClick={() => {
-                      const newPath = breadcrumbPath.slice(0, index + 1);
-                      setBreadcrumbPath(newPath);
-                      handleBreadcrumbClick(item);
-                      fetchFolderContents(item.id);
-                    }}
-                  >
-                    {item.name}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
+                <React.Fragment key={item.id}>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-4 w-4" />
+                  </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      onClick={() => {
+                        const newPath = breadcrumbPath.slice(0, index + 1);
+                        setBreadcrumbPath(newPath);
+                        setCurrentFolder({
+                          _id: item.id,
+                          name: item.name,
+                          path: `/${item.name}`,
+                        });
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {item.name}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </React.Fragment>
               ))}
             </BreadcrumbList>
           </Breadcrumb>
@@ -499,11 +305,7 @@ export default function FilesPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => {
-                    handleCreateFolder(newFolderName);
-                    setIsFolderDialogOpen(false);
-                    setNewFolderName("");
-                  }}
+                  onClick={() => handleCreateFolder(newFolderName)}
                   className="w-full"
                 >
                   Créer
@@ -540,65 +342,181 @@ export default function FilesPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Mes fichiers</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Mes documents</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className={viewMode === "grid" ? "bg-accent" : ""}
+            >
+              <Table2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-accent" : ""}
+            >
+              <GridIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              Aucun fichier trouvé
+            </div>
+          ) : viewMode === "grid" ? (
+            <FileGridView
+              items={filteredItems}
+              onFolderClick={(folder) => {
+                setCurrentFolder(folder);
+                setBreadcrumbPath((prev) => [
+                  ...prev,
+                  { id: folder._id, name: folder.name },
+                ]);
+              }}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={handleDelete}
+              selectedItems={selectedItems}
+              onSelect={(item) => {
+                setSelectedItems((prev) => {
+                  const isSelected = prev.some((i) => i._id === item._id);
+                  if (isSelected) {
+                    return prev.filter((i) => i._id !== item._id);
+                  }
+                  return [...prev, item];
+                });
+              }}
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Taille</TableHead>
-                  <TableHead>Créé le</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {folders.length === 0 && filteredFiles.length === 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-muted-foreground py-8"
-                    >
-                      Aucun fichier trouvé
-                    </TableCell>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Taille</TableHead>
+                    <TableHead>Créé le</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
-                ) : (
-                  <TableBody>
-                    {[...folders, ...filteredFiles]
-                      .filter((item) =>
-                        item.name.toLowerCase().includes(search.toLowerCase())
-                      )
-                      .filter(
-                        (item) => item.fileType === filter || filter === "all"
-                      )
-                      .map((item) => (
-                        <FileItem
-                          key={item._id}
-                          item={item}
-                          onFolderClick={(folder) => {
-                            setCurrentFolder(folder);
-                            // Mettre à jour le chemin de navigation
-                            setBreadcrumbPath((prev) => [
-                              ...prev,
-                              { id: folder._id, name: folder.name },
-                            ]);
-                            fetchFolderContents(folder._id);
-                          }}
-                          onDownload={handleDownload}
-                          onShare={handleShare}
-                          onDelete={handleDelete}
-                        />
-                      ))}
-                  </TableBody>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.map((item) => (
+                    <TableRow key={item._id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {item.fileType === "folder" ? (
+                            <div
+                              className="flex items-center gap-2 cursor-pointer hover:text-primary"
+                              onClick={() => {
+                                setCurrentFolder(item as IFolder);
+                                setBreadcrumbPath((prev) => [
+                                  ...prev,
+                                  { id: item._id, name: item.name },
+                                ]);
+                              }}
+                            >
+                              <Image
+                                src="/folder_i.png"
+                                alt="folder"
+                                width={20}
+                                height={20}
+                                className="object-cover object-center"
+                              />
+                              <span>{item.name}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {(item as IFile).type?.includes("pdf") ? (
+                                <Image
+                                  src="/pdf.png"
+                                  alt="PDF"
+                                  width={20}
+                                  height={20}
+                                  className="object-cover object-center"
+                                />
+                              ) : (item as IFile).type?.includes("image") ? (
+                                <Image
+                                  src={(item as IFile).secureUrl}
+                                  alt={item.name}
+                                  width={20}
+                                  height={20}
+                                  className="object-cover object-center rounded"
+                                />
+                              ) : (item as IFile).type?.includes("word") ? (
+                                <Image
+                                  src="/word.png"
+                                  alt="Word"
+                                  width={20}
+                                  height={20}
+                                  className="object-cover object-center"
+                                />
+                              ) : (
+                                <Image
+                                  src="/text.png"
+                                  alt="File"
+                                  width={20}
+                                  height={20}
+                                  className="object-cover object-center"
+                                />
+                              )}
+                              <span>{item.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.fileType === "folder"
+                          ? "-"
+                          : formatBytes((item as IFile).size)}
+                      </TableCell>
+                      <TableCell>{convertDate(item.createdAt)}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {item.fileType !== "folder" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => handleDownload(item as IFile)}
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Télécharger
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleShare(item as IFile)}
+                                >
+                                  <Share2 className="mr-2 h-4 w-4" />
+                                  Partager
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(item)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

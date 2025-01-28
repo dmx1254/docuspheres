@@ -37,7 +37,11 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Connexion réussie");
+        toast.success("Connexion réussie", {
+          style: {
+            color: "#16a34a",
+          },
+        });
       }
     } catch (error) {
       toast.error("Une erreur est survenue");

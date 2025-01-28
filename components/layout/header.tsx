@@ -13,7 +13,7 @@ export function Header() {
   const showDashboardButton = pathname.startsWith("/blog");
 
   return (
-    <div className="border-b text-center">
+    <div className="border-b text-center bg-card">
       <MobileMenu />
       <div className="flex h-16 items-center px-4">
         {showDashboardButton && (
