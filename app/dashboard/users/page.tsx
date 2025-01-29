@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 type UserRole = "Admin" | "Editor" | "Viewer";
 
@@ -72,6 +73,7 @@ const roleTitles: Record<UserRole, string> = {
 };
 
 export default function UsersPage() {
+  const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -324,14 +326,17 @@ export default function UsersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Voir le profil</DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDeleteUser(user._id)}
-                        >
-                          Supprimer
-                        </DropdownMenuItem>
+                        {session?.user.role === "Admin" && (
+                          <>
+                            <DropdownMenuItem>Modifier</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDeleteUser(user._id)}
+                            >
+                              Supprimer
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

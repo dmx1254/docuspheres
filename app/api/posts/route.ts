@@ -113,9 +113,9 @@ export async function POST(req: Request) {
 
           return {
             name: file.name,
-            size: cloudinaryResponse.bytes,
+            size: Number(cloudinaryResponse.bytes),
             type: file.type,
-            url: cloudinaryResponse.url,
+            url: cloudinaryResponse.secure_url,
             secureUrl: cloudinaryResponse.secure_url,
             cloudinaryId: cloudinaryResponse.public_id,
             format: cloudinaryResponse.format,
@@ -125,16 +125,19 @@ export async function POST(req: Request) {
       })
     );
 
+    // Log des fichiers uploadés pour vérification
+    // console.log("Uploaded Files:", uploadedFiles);
+
     const post = await Post.create({
       title,
       content,
-      tags,
-      files: uploadedFiles,
       author: {
         _id: session.user.id,
         name: session.user.name,
         avatar: avatar || session.user.name,
       },
+      files: uploadedFiles,
+      tags,
       comments: [],
     });
 

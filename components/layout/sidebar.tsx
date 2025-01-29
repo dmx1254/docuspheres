@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
+import clsx from "clsx";
 
 const routes = [
   {
@@ -109,8 +110,7 @@ export function Sidebar() {
         <div className="p-4 pb-2 flex justify-between items-center shrink-0">
           <div
             className={cn(
-              "flex items-center gap-2 transition-all duration-300",
-              isCollapsed && "opacity-0"
+              "flex items-center gap-2 transition-all duration-300"
             )}
           >
             <Image
@@ -120,13 +120,19 @@ export function Sidebar() {
               height={80}
               className="object-cover object-center rounded"
             />
-            <span className="font-extrabold text-xl">DocuSphere</span>
+            <span
+              className={clsx("font-extrabold text-xl", {
+                hidden: isCollapsed,
+              })}
+            >
+              DocuSphere
+            </span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8"
+            className="h-8 w-8 cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronRightIcon className="h-4 w-4" />
