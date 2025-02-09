@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     domains: [
-      "images.unsplash.com",
       "api.dicebear.com",
       "res.cloudinary.com", // Pour Cloudinary
     ],

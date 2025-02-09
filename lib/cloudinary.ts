@@ -33,6 +33,7 @@ export const uploadToCloudinary = async (
         resource_type: "raw",
         format: file.split(";")[0].split("/")[1] || "raw",
       }),
+      timeout: 120000, // 120 secondes
     };
 
     const result = (await cloudinary.uploader.upload(

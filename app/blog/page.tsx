@@ -236,25 +236,25 @@ const BlogPage = () => {
     }
   };
 
-  const handleLike = async (postId: string) => {
-    try {
-      const response = await fetch(`/api/posts/${postId}/like`, {
-        method: "PUT",
-      });
+  // const handleLike = async (postId: string) => {
+  //   try {
+  //     const response = await fetch(`/api/posts/${postId}/like`, {
+  //       method: "PUT",
+  //     });
 
-      if (!response.ok) {
-        throw new Error("Erreur lors de la mise à jour du like");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Erreur lors de la mise à jour du like");
+  //     }
 
-      const updatedPost = await response.json();
-      console.log(updatedPost);
-      setPosts((prev) =>
-        prev.map((post) => (post._id === postId ? updatedPost : post))
-      );
-    } catch (error) {
-      toast.error("Erreur lors de la mise à jour du like");
-    }
-  };
+  //     const updatedPost = await response.json();
+  //     console.log(updatedPost);
+  //     setPosts((prev) =>
+  //       prev.map((post) => (post._id === postId ? updatedPost : post))
+  //     );
+  //   } catch (error) {
+  //     toast.error("Erreur lors de la mise à jour du like");
+  //   }
+  // };
 
   const handleDeletePost = async (postId: string) => {
     try {

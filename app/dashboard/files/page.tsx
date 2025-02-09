@@ -91,25 +91,37 @@ export default function FilesPage() {
   >([]);
   const [selectedItems, setSelectedItems] = useState<(IFile | IFolder)[]>([]);
 
-  const fetchFolders = async () => {
-    try {
-      const response = await fetch("/api/folders");
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des dossiers");
-      }
-      const data = await response.json();
-      setFolders(data);
-    } catch (error) {
-      toast.error("Erreur lors de la récupération des dossiers");
-      console.error(error);
-    }
-  };
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [idEditingText, setIdEditingText] = useState<string>("");
+  const [nameEditing, setNameEditing] = useState<string>("");
+
+  // console.log(isRenaming);
+  // console.log(idEditingText);
+
+  // const fetchFolders = async () => {
+  //   try {
+  //     const response = await fetch("/api/folders");
+  //     if (!response.ok) {
+  //       throw new Error("Erreur lors de la récupération des dossiers");
+  //     }
+  //     const data = await response.json();
+  //     setFolders(data);
+  //   } catch (error) {
+  //     toast.error("Erreur lors de la récupération des dossiers");
+  //     console.error(error);
+  //   }
+  // };
 
   const fetchFolderContents = async (folderId?: string) => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        folderId ? `/api/folders/${folderId}/contents` : "/api/folders/contents"
+        folderId
+          ? `/api/folders/${folderId}/contents`
+          : "/api/folders/contents",
+        {
+          method: "GET",
+        }
       );
       const data = await response.json();
       setFiles(data.files);
@@ -204,12 +216,71 @@ export default function FilesPage() {
     }
   };
 
+  const handleRename = async (item: IFile | IFolder) => {
+    try {
+      const endpoint =
+        item.fileType === "folder" ? "/api/folders" : "/api/files";
+      const response = await fetch(`${endpoint}/${item._id}/rename`, {
+        method: "PUT",
+        body: JSON.stringify({ name: nameEditing }),
+      });
+
+      if (!response.ok) throw new Error("Erreur lors du changement de nom");
+
+      const res = await response.json();
+
+      if (item.fileType === "folder") {
+        setFolders((prev) =>
+          prev.map((f) => {
+            if (f._id === res._id) {
+              return {
+                ...f,
+                name: res.name,
+              };
+            }
+            return f;
+          })
+        );
+      } else {
+        setFiles((prev) =>
+          prev.map((f) => {
+            if (f._id === res._id) {
+              return {
+                ...f,
+                name: res.name,
+              };
+            }
+            return f;
+          })
+        );
+      }
+
+      setIsRenaming(false);
+      setIdEditingText("");
+      setNameEditing("");
+
+      toast.success("Fichier renommé avec succès!", {
+        style: {
+          color: "#22c55e",
+        },
+      });
+
+      // toast.success("Supprimé avec succès");
+    } catch (error: any) {
+      toast.error(error.response.data.error, {
+        style: {
+          color: "#ef4444",
+        },
+      });
+    }
+  };
+
   useEffect(() => {
     fetchFolderContents(currentFolder?._id);
   }, [currentFolder?._id]);
 
   const allItems = [...folders, ...files];
-  const filteredItems = allItems.filter((item) => {
+  const filteredItems = allItems?.filter((item) => {
     const matchesSearch = item.name
       .toLowerCase()
       .includes(search.toLowerCase());
@@ -385,7 +456,14 @@ export default function FilesPage() {
               onDownload={handleDownload}
               onShare={handleShare}
               onDelete={handleDelete}
+              onRename={handleRename}
+              isRenaming={isRenaming}
+              idEditingText={idEditingText}
+              setIsRenaming={setIsRenaming}
+              setIdEditingText={setIdEditingText}
               selectedItems={selectedItems}
+              nameEditing={nameEditing}
+              setNameEditing={setNameEditing}
               onSelect={(item) => {
                 setSelectedItems((prev) => {
                   const isSelected = prev.some((i) => i._id === item._id);

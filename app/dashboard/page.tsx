@@ -150,10 +150,18 @@ export default function DashboardPage() {
         // Keep your existing fetch calls
         const [statsRes, activityRes, storageRes, loginHistoryRes] =
           await Promise.all([
-            fetch("/api/statistics"),
-            fetch("/api/activity/chart"),
-            fetch("/api/storage/chart"),
-            fetch("/api/login-history/chart"),
+            fetch("/api/statistics", {
+              cache: "force-cache",
+            }),
+            fetch("/api/activity/chart", {
+              cache: "force-cache",
+            }),
+            fetch("/api/storage/chart", {
+              cache: "force-cache",
+            }),
+            fetch("/api/login-history/chart", {
+              cache: "force-cache",
+            }),
           ]);
 
         if (!statsRes.ok)

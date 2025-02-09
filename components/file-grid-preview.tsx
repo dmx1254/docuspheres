@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,10 +9,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Download, MoreVertical, Share2, Trash2 } from "lucide-react";
+import {
+  Download,
+  FilePenLine,
+  Mail,
+  MoreVertical,
+  Share2,
+  Trash2,
+} from "lucide-react";
 import Image from "next/image";
 import { IFile } from "@/app/models/File";
 import { IFolder } from "@/app/models/Folder";
+import { Input } from "./ui/input";
+import DialogEmail from "./DialogEmail";
 
 interface FileOrFolderItemProps {
   item: IFile | IFolder;
@@ -20,8 +29,15 @@ interface FileOrFolderItemProps {
   onDownload?: (file: IFile) => void;
   onShare?: (file: IFile) => void;
   onDelete: (item: IFile | IFolder) => void;
+  onRename: (item: IFile | IFolder) => void;
   isSelected?: boolean;
   onSelect?: (item: IFile | IFolder) => void;
+  setIsRenaming: (boolean: boolean) => void;
+  setIdEditingText: (val: string) => void;
+  nameEditing: string;
+  setNameEditing: (val: string) => void;
+  isRenaming: boolean;
+  idEditingText: string;
 }
 
 function formatBytes(bytes: number) {
@@ -47,7 +63,14 @@ export function FileGridView({
   onDownload,
   onShare,
   onDelete,
+  onRename,
   onSelect,
+  setIsRenaming,
+  setIdEditingText,
+  isRenaming,
+  idEditingText,
+  nameEditing,
+  setNameEditing,
   selectedItems = [],
 }: {
   items: (IFile | IFolder)[];
@@ -55,7 +78,14 @@ export function FileGridView({
   onDownload?: (file: IFile) => void;
   onShare?: (file: IFile) => void;
   onDelete: (item: IFile | IFolder) => void;
+  onRename: (item: IFile | IFolder) => void;
   onSelect?: (item: IFile | IFolder) => void;
+  setIsRenaming: (boolean: boolean) => void;
+  setIdEditingText: (val: string) => void;
+  nameEditing: string;
+  setNameEditing: (val: string) => void;
+  isRenaming: boolean;
+  idEditingText: string;
   selectedItems?: (IFile | IFolder)[];
 }) {
   return (
@@ -68,6 +98,13 @@ export function FileGridView({
           onDownload={onDownload}
           onShare={onShare}
           onDelete={onDelete}
+          onRename={onRename}
+          setIsRenaming={setIsRenaming}
+          setIdEditingText={setIdEditingText}
+          nameEditing={nameEditing}
+          setNameEditing={setNameEditing}
+          isRenaming={isRenaming}
+          idEditingText={idEditingText}
           isSelected={selectedItems.some(
             (selected) => selected._id === item._id
           )}
@@ -84,11 +121,41 @@ function FileGridItem({
   onDownload,
   onShare,
   onDelete,
+  onRename,
+  setIsRenaming,
+  setIdEditingText,
+  isRenaming,
+  idEditingText,
   isSelected,
+  nameEditing,
+  setNameEditing,
   onSelect,
 }: FileOrFolderItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const isFolder = item.fileType === "folder";
+  // console.log(nameEditing);
+
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  const onSendEmail = async (email: string) => {
+    // console.log(email);
+
+    try {
+      const response = await fetch("/api/users/share-with-email", {
+        method: "POST",
+        body: JSON.stringify({
+          toEmail: email,
+          fileUrl: (item as IFile).secureUrl,
+          fileName: (item as IFile).name,
+          fileType: (item as IFile).fileType,
+          previewUrl: (item as IFile).secureUrl,
+        }),
+      });
+      return response.json();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const getFileIcon = () => {
     if (isFolder) {
@@ -107,6 +174,8 @@ function FileGridItem({
 
     const file = item as IFile;
     const fileType = file.type?.toLowerCase();
+
+    console.log(fileType);
 
     if (fileType?.includes("pdf")) {
       return (
@@ -134,7 +203,6 @@ function FileGridItem({
       );
     } else if (
       fileType?.includes("word") ||
-      fileType?.includes("document") ||
       fileType?.includes("application/doc")
     ) {
       return (
@@ -224,6 +292,14 @@ function FileGridItem({
     }
   };
 
+  const isEditingRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      isEditingRef.current?.focus();
+    }
+  }, [isRenaming]);
+
   return (
     <div
       className={cn(
@@ -250,6 +326,7 @@ function FileGridItem({
                     e.stopPropagation();
                     onDownload?.(item as IFile);
                   }}
+                  className="text-white cursor-pointer"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Télécharger
@@ -259,18 +336,42 @@ function FileGridItem({
                     e.stopPropagation();
                     onShare?.(item as IFile);
                   }}
+                  className="text-white cursor-pointer"
                 >
                   <Share2 className="mr-2 h-4 w-4" />
-                  Partager
+                  Partager le lien
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(true);
+                  }}
+                  className="text-white cursor-pointer"
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Partager par email
                 </DropdownMenuItem>
               </>
             )}
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
+                // onRename(item);
+                setIsRenaming(true);
+                setIdEditingText(item._id);
+                // console.log(item);
+              }}
+              className="text-white cursor-pointer"
+            >
+              <FilePenLine className="mr-2 h-4 w-4" />
+              Renommer
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
                 onDelete(item);
               }}
-              className="text-destructive"
+              className="text-destructive cursor-pointer"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
@@ -282,15 +383,60 @@ function FileGridItem({
       <div className="flex flex-col items-center gap-2">
         {getFileIcon()}
         <div className="w-full text-center">
-          <p className="text-sm font-medium truncate" title={item.name}>
-            {item.name}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {isFolder ? "Dossier" : formatBytes((item as IFile).size)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {convertDate(item.createdAt)}
-          </p>
+          {isRenaming && item._id === idEditingText ? (
+            <>
+              <input
+                ref={isEditingRef}
+                type="text"
+                className="border z-[99] rounded-md px-3 py-2 w-full"
+                defaultValue={item.name.split(".")[0]}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  e.stopPropagation();
+                  setNameEditing(e.target.value);
+                }}
+              />
+              <div className="flex items-center mt-2 gap-2 justify-between w-full max-sm:flex-col">
+                <button
+                  className="bg-destructive p-2 rounded text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIdEditingText("");
+                    setIsRenaming(false);
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  className="bg-blue-500 p-2 rounded text-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRename(item);
+                  }}
+                >
+                  Confirmer
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium truncate" title={item.name}>
+                {item.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isFolder ? "Dossier" : formatBytes((item as IFile).size)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {convertDate(item.createdAt)}
+              </p>
+            </>
+          )}
+          <DialogEmail
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            fileName={item.name}
+            onSendEmail={onSendEmail}
+          />
         </div>
       </div>
     </div>

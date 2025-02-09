@@ -127,7 +127,6 @@ export async function DELETE(
 
     const task = await Task.findOneAndDelete({
       _id: taskId,
-      "createdBy._id": session.user.id,
     });
 
     if (!task) {

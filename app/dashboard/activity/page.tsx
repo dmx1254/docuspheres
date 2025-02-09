@@ -114,7 +114,9 @@ export default function ActivityPage() {
         params.append("from", subDays(now, 30).toISOString());
       }
 
-      const response = await fetch(`/api/history?${params.toString()}`);
+      const response = await fetch(`/api/history?${params.toString()}`, {
+        cache: "force-cache",
+      });
       if (!response.ok)
         throw new Error("Erreur lors de la récupération des logs");
 
@@ -232,16 +234,16 @@ export default function ActivityPage() {
                             {log.actionType === "download"
                               ? "téléchargé"
                               : log.actionType === "share"
-                              ? "partagé"
-                              : log.actionType === "delete"
-                              ? "supprimé"
-                              : ""}{" "}
+                                ? "partagé"
+                                : log.actionType === "delete"
+                                  ? "supprimé"
+                                  : ""}{" "}
                             le{" "}
                             {log.targetType === "file"
                               ? "fichier"
                               : log.targetType === "folder"
-                              ? "dossier"
-                              : ""}
+                                ? "dossier"
+                                : ""}
                           </span>
                           <span className="text-sm text-muted-foreground">
                             {log.details}

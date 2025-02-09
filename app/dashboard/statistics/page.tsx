@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
   Bar,
@@ -25,28 +20,34 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 function formatBytes(bytes: number) {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes === 0) return '0 Byte';
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  if (bytes === 0) return "0 Byte";
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
 }
 
 const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
 ];
 
 // Custom axis components with default parameters instead of defaultProps
-const CustomXAxis = ({ tick = { fontSize: 12 }, tickLine = { stroke: 'hsl(var(--border))' }, axisLine = { stroke: 'hsl(var(--border))' }, ...props }) => (
-  <XAxis tick={tick} tickLine={tickLine} axisLine={axisLine} {...props} />
-);
+const CustomXAxis = ({
+  tick = { fontSize: 12 },
+  tickLine = { stroke: "hsl(var(--border))" },
+  axisLine = { stroke: "hsl(var(--border))" },
+  ...props
+}) => <XAxis tick={tick} tickLine={tickLine} axisLine={axisLine} {...props} />;
 
-const CustomYAxis = ({ tick = { fontSize: 12 }, tickLine = { stroke: 'hsl(var(--border))' }, axisLine = { stroke: 'hsl(var(--border))' }, ...props }) => (
-  <YAxis tick={tick} tickLine={tickLine} axisLine={axisLine} {...props} />
-);
+const CustomYAxis = ({
+  tick = { fontSize: 12 },
+  tickLine = { stroke: "hsl(var(--border))" },
+  axisLine = { stroke: "hsl(var(--border))" },
+  ...props
+}) => <YAxis tick={tick} tickLine={tickLine} axisLine={axisLine} {...props} />;
 
 interface Statistics {
   totalFiles: number;
@@ -72,24 +73,33 @@ export default function StatisticsPage() {
   const fetchData = async () => {
     try {
       // Récupérer les statistiques générales
-      const statsResponse = await fetch('/api/statistics');
+      const statsResponse = await fetch("/api/statistics", {
+        cache: "force-cache",
+      });
       if (!statsResponse.ok) {
         const data = await statsResponse.json();
-        throw new Error(data.error || 'Erreur lors de la récupération des statistiques');
+        throw new Error(
+          data.error || "Erreur lors de la récupération des statistiques"
+        );
       }
       const statsData = await statsResponse.json();
       setStatistics(statsData);
 
       // Récupérer les données de stockage
-      const storageResponse = await fetch('/api/storage/chart');
+      const storageResponse = await fetch("/api/storage/chart", {
+        cache: "force-cache",
+      });
       if (!storageResponse.ok) {
         const data = await storageResponse.json();
-        throw new Error(data.error || 'Erreur lors de la récupération des données de stockage');
+        throw new Error(
+          data.error || "Erreur lors de la récupération des données de stockage"
+        );
       }
       const storageData = await storageResponse.json();
       setStorageData(storageData);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Une erreur est survenue';
+      const message =
+        error instanceof Error ? error.message : "Une erreur est survenue";
       setError(message);
       toast.error(message);
     } finally {
@@ -110,11 +120,7 @@ export default function StatisticsPage() {
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center text-destructive">
           <p>{error}</p>
-          <Button 
-            variant="outline" 
-            onClick={fetchData} 
-            className="mt-4"
-          >
+          <Button variant="outline" onClick={fetchData} className="mt-4">
             Réessayer
           </Button>
         </div>
@@ -131,10 +137,12 @@ export default function StatisticsPage() {
   }
 
   // Prepare data for file types chart
-  const fileTypesData = Object.entries(statistics.fileTypes).map(([type, count]) => ({
-    name: type.split('/')[1]?.toUpperCase() || type.toUpperCase(),
-    value: count,
-  }));
+  const fileTypesData = Object.entries(statistics.fileTypes).map(
+    ([type, count]) => ({
+      name: type.split("/")[1]?.toUpperCase() || type.toUpperCase(),
+      value: count,
+    })
+  );
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -145,7 +153,9 @@ export default function StatisticsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Fichiers</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Fichiers
+            </CardTitle>
             <FileIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -154,7 +164,9 @@ export default function StatisticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Dossiers</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Dossiers
+            </CardTitle>
             <FolderIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -163,11 +175,15 @@ export default function StatisticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Stockage Utilisé</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Stockage Utilisé
+            </CardTitle>
             <HardDriveIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatBytes(statistics.totalStorage)}</div>
+            <div className="text-2xl font-bold">
+              {formatBytes(statistics.totalStorage)}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -183,15 +199,22 @@ export default function StatisticsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span>Stockage utilisé</span>
                   <span className="text-muted-foreground">
-                    {formatBytes(statistics.totalStorage)} sur {formatBytes(statistics.storageLimit)}
+                    {formatBytes(statistics.totalStorage)} sur{" "}
+                    {formatBytes(statistics.storageLimit)}
                   </span>
                 </div>
                 <Progress value={statistics.storageUsagePercentage} />
               </div>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={storageData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <BarChart
+                    data={storageData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="hsl(var(--border))"
+                    />
                     <CustomXAxis
                       dataKey="month"
                       interval={0}
@@ -209,17 +232,20 @@ export default function StatisticsPage() {
                       type="number"
                       padding={{ top: 0, bottom: 0 }}
                     />
-                    <Tooltip 
-                      formatter={(value: number) => [`${value.toFixed(2)} GB`, "Stockage"]}
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${value.toFixed(2)} GB`,
+                        "Stockage",
+                      ]}
                       contentStyle={{
-                        backgroundColor: 'hsl(var(--popover))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: 'var(--radius)',
+                        backgroundColor: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "var(--radius)",
                       }}
-                      cursor={{ fill: 'hsl(var(--muted))' }}
+                      cursor={{ fill: "hsl(var(--muted))" }}
                     />
-                    <Bar 
-                      dataKey="storage" 
+                    <Bar
+                      dataKey="storage"
                       fill="hsl(var(--chart-1))"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={50}
@@ -244,7 +270,9 @@ export default function StatisticsPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
@@ -254,8 +282,8 @@ export default function StatisticsPage() {
                     endAngle={-270}
                   >
                     {fileTypesData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
                         stroke="hsl(var(--background))"
                         strokeWidth={2}
@@ -264,9 +292,9 @@ export default function StatisticsPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: 'var(--radius)',
+                      backgroundColor: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "var(--radius)",
                     }}
                   />
                 </PieChart>

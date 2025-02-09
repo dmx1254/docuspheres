@@ -93,6 +93,7 @@ export default function UsersPage() {
     try {
       const response = await fetch("/api/users", {
         method: "GET",
+        cache: "force-cache",
       });
       if (!response.ok) {
         const data = await response.json();
